@@ -128,12 +128,13 @@ export default function Home() {
               ))}
             </div>
             
+            <label htmlFor="newName" className="mt-4 block text-sm font-medium ">
+              Lägg till ny spelare
+            </label>
             <div className='flex flex-row gap-2 items-center'>
               
               <div className='w-64'>
-                {/* <label htmlFor="newName" className="block text-sm font-medium text-gray-700">
-                  Email
-                </label> */}
+                
                 <div className="relative mt-1 rounded-md shadow-sm">
                   <input
                     type="text"
