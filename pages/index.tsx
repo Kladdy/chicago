@@ -3,7 +3,8 @@ import Image from 'next/image'
 import { Inter } from '@next/font/google'
 import styles from '@/styles/Home.module.css'
 import { useEffect, useRef, useState } from 'react'
-import { ExclamationCircleIcon, PlusIcon } from '@heroicons/react/20/solid'
+import { ArrowPathIcon, ExclamationCircleIcon, PlusIcon, TrashIcon } from '@heroicons/react/20/solid'
+import RadioGroupWithDisabledOptions, { RadioOption } from '@/components/RadioGroupWithDisabledOptions'
 
 function classNames(...classes: string[]) {
   return classes.filter(Boolean).join(' ')
@@ -23,17 +24,23 @@ interface Round {
   roundBestHand: Hand,
 }
 
-enum Hand {
-  HighCard = 0,
-  Pair = 1,
-  TwoPair = 2,
-  ThreeOfAKind = 3,
-  Straight = 4,
-  Flush = 5,
-  FullHouse = 6,
-  FourOfAKind = 7,
-  StraightFlush = 8,
-  RoyalFlush = 9,
+// Create a map with hands
+const Hands : Hand[] = [
+  { name: "Högst kort", value: 0 },
+  { name: "Par", value: 1 },
+  { name: "Tvåpar", value: 2 },
+  { name: "Trepar", value: 3 },
+  { name: "Stege", value: 4 },
+  { name: "Färg", value: 5 },
+  { name: "Kåk", value: 6 },
+  { name: "Fyrtal", value: 7 },
+  { name: "Färgstege", value: 8 },
+  { name: "Royal Flush", value: 9 },
+]
+
+interface Hand {
+  name: string,
+  value: number,
 }
 
 interface Player {
@@ -51,6 +58,11 @@ export default function Home() {
     created: undefined
   })
   const [newPlayerName, setNewPlayerName] = useState<string>("")
+  const [roundWinnerLastCard, setRoundWinnerLastCard] = useState<Player | null>(null)
+  const [roundWinnerBestHand, setRoundWinnerBestHand] = useState<Player | null>(null)
+  const [roundBestHand, setRoundBestHand] = useState<Hand | null>(null)
+  const [clearGamePrompt, setClearGamePrompt] = useState<boolean>(false)
+  const [clearRoundsPrompt, setClearRoundsPrompt] = useState<boolean>(false)
 
   // Set game on load, if exists
   useEffect(() => {
@@ -85,6 +97,36 @@ export default function Home() {
     return JSON.parse(JSON.stringify(g)) as Game
   }
 
+  function loadArchivedGames() {
+    const g = localStorage.getItem('archivedGames')
+    if (g) {
+      return JSON.parse(g) as Game[]
+    }
+    return []
+  }
+
+  function archiveGame(g: Game) {
+    const archivedGames = loadArchivedGames()
+    archivedGames.push(g)
+    localStorage.setItem('archivedGames', JSON.stringify(archivedGames))
+  }
+
+  function activateClearGamePrompt() {
+    setClearGamePrompt(true)
+
+    setTimeout(() => {
+      setClearGamePrompt(false)
+    }, 2000)
+  }
+
+  function activateClearRoundsPrompt() {
+    setClearRoundsPrompt(true)
+
+    setTimeout(() => {
+      setClearRoundsPrompt(false)
+    }, 2000)
+  }
+
   return (
     <>
       <Head>
@@ -93,8 +135,9 @@ export default function Home() {
         <meta name="view  port" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
+      {/* <main className={styles.main}> */}
       <main className={styles.main}>
-        <div className='max-w-lg grid grid-cols-1'>
+        <div className='grid grid-cols-1'>
           
           <div>
             <h1 className='pb-2 text-center font-extrabold text-transparent text-6xl bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600'>Poängpoker</h1>
@@ -107,6 +150,74 @@ export default function Home() {
             <p>Spel skapades: {new Date(game.created || "").toLocaleString("sv-SE")}</p>
             <p>Antal spelare: {game.players.length}</p>
             <p>Antal rundor: {game.rounds.length}</p>
+          </div>
+
+          <hr className='border-gray-600 my-6'></hr>
+
+
+          <div className=''>
+            {/* <h2 className='pb-1 font-extrabold text-transparent text-2xl bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600'>Metadata</h2> */}
+            <div className='flex flex-col space-y-2'>
+
+              <div>
+                <p className="block text-sm font-medium ">
+                  Radera alla spelare och rundor
+                </p>
+                <button
+                  type="button"
+                  className="w-fit inline-flex items-center rounded-md border border-transparent bg-red-600 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 "
+                  onClick={() => {
+                    if (clearGamePrompt) {
+                      archiveGame(game)
+                      const g : Game = {
+                        players: [],
+                        rounds: [],
+                        created: new Date().toISOString()
+                      }
+                      setGame(g)
+                      saveGame(g)
+                      setClearGamePrompt(false)
+                    } else {
+                      activateClearGamePrompt()
+                    }
+                  }}
+                >
+                  <TrashIcon className="-ml-1 mr-3 h-5 w-5" aria-hidden="true" />
+                  {clearGamePrompt ? "Är du säker?" : "Radera spel..."}
+                </button>
+              </div>
+
+              <div>
+                <p className="block text-sm font-medium ">
+                  Radera rundorna utan att radera spelarna
+                </p>
+                <button
+                  type="button"
+                  className="w-fit inline-flex items-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 "
+                  onClick={() => {
+                    if (clearRoundsPrompt) {
+                      archiveGame(game)
+                      const g = copyGame(game)
+                      g.rounds = []
+
+                      // Clear player points
+                      g.players.forEach(p => {
+                        p.points = 0
+                      })
+
+                      setGame(g)
+                      saveGame(g)
+                      setClearRoundsPrompt(false)
+                    } else {
+                      activateClearRoundsPrompt()
+                    }
+                  }}
+                >
+                  <ArrowPathIcon className="-ml-1 mr-3 h-5 w-5" aria-hidden="true" />
+                  {clearRoundsPrompt ? "Är du säker?" : "Rensa rundor..."}
+                </button>
+              </div>
+            </div>
           </div>
 
           <hr className='border-gray-600 my-6'></hr>
@@ -181,7 +292,134 @@ export default function Home() {
               }
             </div>
           </div>
-          
+
+          <hr className='border-gray-600 my-6'></hr>
+
+          <div className=''>
+            <h2 className='pb-4 font-extrabold text-transparent text-2xl bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600'>Rundor</h2>
+            
+            {game.players.length === 0 ? 
+            <p className="my-4 block text-sm font-medium">
+              Lägg till spelare för att kunna spela
+            </p> : <>
+              <div className='grid grid-cols-1 gap-4 mb-2'>
+                {game.rounds.map((r, i) => (
+                  <div key={i} className='grid grid-cols-1'>
+                    <p className='font-bold text-sm'>Runda {i+1}: </p>
+                    <p>Vinnare (sista kortet): {r.roundWinnerLastCard.name} {"(+2p)"}</p>
+                    <p>Vinnare (bäst hand): {r.roundWinnerBestHand.name} {`(${r.roundBestHand.name}, +${r.roundBestHand.value}p)`}</p>
+                    <button className='text-red-500 text-left' onClick={() => {
+                      const g = copyGame(game)
+                      
+                      // Remove player scores
+                      g.players.forEach(p => {
+                        if (p.name === r.roundWinnerLastCard.name) {
+                          p.points -= 2
+                        }
+                        if (p.name === r.roundWinnerBestHand.name) {
+                          p.points -= r.roundBestHand.value
+                        }
+                      })
+
+                      g.rounds.splice(i, 1)
+                      setGame(g)
+                      saveGame(g)
+                    }}>
+                      Ta bort
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              <p className="my-4 block text-sm font-medium">
+                Lägg till ny runda
+              </p>
+              <div className='flex flex-col gap-4'>
+                
+                <div>
+                  <RadioGroupWithDisabledOptions<Player>
+                    title="Vinnare (sista kortet):"
+                    options={game.players.map(p => ({ value: p, disabled: false }))}
+                    property="name"
+                    value={{value: roundWinnerLastCard}}
+                    setValue={(e: RadioOption<Player>) => {
+                      setRoundWinnerLastCard(e.value)
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <RadioGroupWithDisabledOptions<Player>
+                    title="Vinnare (bästa hand):"
+                    options={game.players.map(p => ({ value: p }))}
+                    property="name"
+                    value={{value: roundWinnerBestHand}}
+                    setValue={(e: RadioOption<Player>) => {
+                      setRoundWinnerBestHand(e.value)
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <RadioGroupWithDisabledOptions<Hand>
+                    title="Bästa hand:"
+                    options={Hands.map(h => ({ value: h }))}
+                    property="name"
+                    value={{value: roundBestHand}}
+                    setValue={(e: RadioOption<Hand>) => {
+                      setRoundBestHand(e.value)
+                    }}
+                  />
+                </div>
+
+                {!!roundWinnerLastCard && !!roundWinnerBestHand && !!roundBestHand && 
+                
+                <button
+                  type="button"
+                  className="w-fit inline-flex items-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 "
+                  onClick={() => {
+                    setGame(g => {
+                      const newGame = copyGame(g)
+                      newGame.rounds.push({
+                        roundWinnerLastCard,
+                        roundWinnerBestHand,
+                        roundBestHand
+                      })
+                      
+                      newGame.players = newGame.players.map(p => {
+                        if (p.name === roundWinnerLastCard.name) {
+                          p.points += 2
+                        }
+                        if (p.name === roundWinnerBestHand.name) {
+                          p.points += roundBestHand.value
+                        }
+                        return p
+                      })
+
+                      saveGame(newGame)
+                      return newGame
+                    })
+                    setRoundWinnerLastCard(null)
+                    setRoundWinnerBestHand(null)
+                    setRoundBestHand(null)
+                  }}
+                >
+                  <PlusIcon className="-ml-1 mr-3 h-5 w-5" aria-hidden="true" />
+                  Lägg till runda
+                </button>
+
+                }
+
+
+              </div>
+
+            </>}
+          </div>
+
+          <div className='text-md text-gray-400 text-center mt-20'>
+            &copy; 2021 - <a className="underline" href="https://sigfrid.stjarnholm.com" target="_blank" rel="noopener noreferrer">Sigfrid Stjärnholm</a>
+          </div>
+
         </div>
       </main>
     </>
