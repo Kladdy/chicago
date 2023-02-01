@@ -417,7 +417,7 @@ export default function Home() {
           </div>
 
           <div className='text-md text-gray-400 text-center mt-20'>
-            &copy; 2021 - <a className="underline" href="https://sigfrid.stjarnholm.com" target="_blank" rel="noopener noreferrer">Sigfrid Stjärnholm</a>
+            &copy; 2023 - <a className="underline" href="https://sigfrid.stjarnholm.com" target="_blank" rel="noopener noreferrer">Sigfrid Stjärnholm</a>
           </div>
 
         </div>
