@@ -29,7 +29,7 @@ const Hands : Hand[] = [
   { name: "Högst kort", value: 0 },
   { name: "Par", value: 1 },
   { name: "Tvåpar", value: 2 },
-  { name: "Trepar", value: 3 },
+  { name: "Triss", value: 3 },
   { name: "Stege", value: 4 },
   { name: "Färg", value: 5 },
   { name: "Kåk", value: 6 },
@@ -48,8 +48,6 @@ interface Player {
   points: number
 }
 
-const dateOptions = { year: "numeric", month: 'long', day: 'numeric', hour: 'numeric', minute: 'numeric'};
-
 export default function Home() {
 
   const [game, setGame] = useState<Game>({
@@ -63,6 +61,9 @@ export default function Home() {
   const [roundBestHand, setRoundBestHand] = useState<Hand | null>(null)
   const [clearGamePrompt, setClearGamePrompt] = useState<boolean>(false)
   const [clearRoundsPrompt, setClearRoundsPrompt] = useState<boolean>(false)
+  const [showChangeLog, setShowChangeLog] = useState<boolean>(false);
+
+  const NAME_LENGTH_LIMIT = 10;
 
   // Set game on load, if exists
   useEffect(() => {
@@ -106,6 +107,12 @@ export default function Home() {
   }
 
   function archiveGame(g: Game) {
+    // Check if game has any rounds
+    if (g.rounds.length === 0) {
+      console.log("Game has no rounds, not archiving")
+      return
+    }
+
     const archivedGames = loadArchivedGames()
     archivedGames.push(g)
     localStorage.setItem('archivedGames', JSON.stringify(archivedGames))
@@ -205,6 +212,9 @@ export default function Home() {
                         p.points = 0
                       })
 
+                      // Set new date
+                      g.created = new Date().toISOString()
+
                       setGame(g)
                       saveGame(g)
                       setClearRoundsPrompt(false)
@@ -240,7 +250,7 @@ export default function Home() {
             </div>
             
             <label htmlFor="newName" className="mt-4 block text-sm font-medium ">
-              Lägg till ny spelare
+              Lägg till ny spelare (i sittningsordning)
             </label>
             <div className='flex flex-row gap-2 items-center'>
               
@@ -254,26 +264,32 @@ export default function Home() {
                     className={classNames("block w-full rounded-md  pr-10 focus:outline-none sm:text-sm", 
                       game.players.find(p => p.name === newPlayerName) ? "border-red-300 text-red-900 placeholder-red-300 focus:border-red-500 focus:ring-red-500" : "border-gray-300 text-gray-800"
                     )}
-                    placeholder="Namn Namnsson"
+                    placeholder="Namn"
                     value={newPlayerName}
                     onChange={(e) => {
                       setNewPlayerName(e.target.value || "")
                     }}
                   />
-                  {game.players.find(p => p.name === newPlayerName) &&
+                  {(!!game.players.find(p => p.name === newPlayerName) || newPlayerName.length > NAME_LENGTH_LIMIT) &&
                     <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
                       <ExclamationCircleIcon className="h-5 w-5 text-red-500" aria-hidden="true" />
                     </div>
                   }
+                  
                 </div>
-                {game.players.find(p => p.name === newPlayerName) &&
+                {!!game.players.find(p => p.name === newPlayerName) &&
                   <p className="mt-2 text-sm text-red-600" id="email-error">
                     En spelare har redan det namnet
                   </p>
                 }
+                {newPlayerName.length > NAME_LENGTH_LIMIT &&
+                  <p className="mt-2 text-sm text-red-600" id="email-error">
+                    Namnet är för långt (max {NAME_LENGTH_LIMIT} bokstäver)
+                  </p>
+                }
               </div>
 
-              {!!newPlayerName && !game.players.find(p => p.name === newPlayerName) &&
+              {!!newPlayerName && !game.players.find(p => p.name === newPlayerName) && !(newPlayerName.length > NAME_LENGTH_LIMIT) &&
                 <button
                   onClick={() => {
                     setGame(g => {
@@ -418,6 +434,18 @@ export default function Home() {
 
           <div className='text-md text-gray-400 text-center mt-20'>
             &copy; 2023 - <a className="underline" href="https://sigfrid.stjarnholm.com" target="_blank" rel="noopener noreferrer">Sigfrid Stjärnholm</a>
+          </div>
+
+          <div className='text-md text-gray-400 text-center mt-20'>
+            {showChangeLog ? (<div>
+              <p className='underline cursor-pointer' onClick={() => {setShowChangeLog(false)}}>Dölj ändringslogg</p>
+              <ul className='list-disc list-inside'>
+                <li>2023-01-31: Initial version</li>
+                <li>2023-02-01: Trepar → Triss, begränsa spelarnamnslängd</li>
+              </ul>
+            </div>) : (<div>
+              <p className='underline cursor-pointer' onClick={() => {setShowChangeLog(true)}}>Visa ändringslogg</p>
+            </div>)}
           </div>
 
         </div>
