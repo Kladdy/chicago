@@ -5,6 +5,8 @@ import styles from '@/styles/Home.module.css'
 import { useEffect, useRef, useState } from 'react'
 import { ArrowPathIcon, ExclamationCircleIcon, PlusIcon, TrashIcon } from '@heroicons/react/20/solid'
 import RadioGroupWithDisabledOptions, { RadioOption } from '@/components/RadioGroupWithDisabledOptions'
+import { Switch } from '@headlessui/react'
+import toast, { Toaster } from 'react-hot-toast'
 
 function classNames(...classes: string[]) {
   return classes.filter(Boolean).join(' ')
@@ -22,6 +24,7 @@ interface Round {
   roundWinnerLastCard: Player,
   roundWinnerBestHand: Player,
   roundBestHand: Hand,
+  illegalTraders: Player[],
 }
 
 // Create a map with hands
@@ -45,7 +48,8 @@ interface Hand {
 
 interface Player {
   name: string,
-  points: number
+  points: number,
+  dealer: boolean,
 }
 
 export default function Home() {
@@ -62,6 +66,7 @@ export default function Home() {
   const [clearGamePrompt, setClearGamePrompt] = useState<boolean>(false)
   const [clearRoundsPrompt, setClearRoundsPrompt] = useState<boolean>(false)
   const [showChangeLog, setShowChangeLog] = useState<boolean>(false);
+  const [illegalTraders, setIllegalTraders] = useState<Player[]>([])
 
   const NAME_LENGTH_LIMIT = 10;
 
@@ -144,6 +149,7 @@ export default function Home() {
       </Head>
       {/* <main className={styles.main}> */}
       <main className={styles.main}>
+        <Toaster/>
         <div className='grid grid-cols-1'>
           
           <div>
@@ -236,11 +242,19 @@ export default function Home() {
             <h2 className='pb-1 font-extrabold text-transparent text-2xl bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600'>Spelare</h2>
             <div className='grid grid-cols-1 gap-2 mb-2'>
               {game.players.map((p, i) => (
-                <div key={p.name} className='grid grid-cols-3'>
-                  <p>{p.name}</p>
-                  <p>{p.points} poäng</p>
-                  <button className='text-red-500' onClick={() => {
+                <div key={p.name} className='grid grid-cols-11 gap-x-1 items-baseline'>
+                  <p className='col-span-3 whitespace-nowrap'>{p.name}</p>
+                  <p className='col-span-1'>{p.points}p</p>
+                  <p className='text-blue-400 col-span-2 text-center text-sm '>{p.dealer ? "Dealer" : ""}</p>
+                  <p className='text-orange-400 col-span-2 text-right text-sm '>{p.points >= 17 ? "Bytstopp" : ""}</p>
+                  <button className='text-red-500 col-span-3 text-right' onClick={() => {
                     const g = copyGame(game)
+
+                    // If the player is the dealer, set the next player as dealer
+                    if (g.players[i].dealer) {
+                      g.players[(i + 1) % g.players.length].dealer = true
+                    }
+
                     g.players.splice(i, 1)
                     setGame(g)
                     saveGame(g)
@@ -293,8 +307,9 @@ export default function Home() {
                 <button
                   onClick={() => {
                     setGame(g => {
+                      // Create a new player. If it is the first player, make it dealer
                       const newGame = copyGame(g)
-                      newGame.players.push({name: newPlayerName, points: 0})
+                      newGame.players.push({name: newPlayerName, points: 0, dealer: game.players.length === 0})
                       saveGame(newGame)
                       return newGame
                     })
@@ -324,6 +339,7 @@ export default function Home() {
                     <p className='font-bold text-sm'>Runda {i+1}: </p>
                     <p>Vinnare (sista kortet): {r.roundWinnerLastCard.name} {"(+2p)"}</p>
                     <p>Vinnare (bäst hand): {r.roundWinnerBestHand.name} {`(${r.roundBestHand.name}, +${r.roundBestHand.value}p)`}</p>
+                    {r.illegalTraders?.length > 0 && <p>Illegala byten: {r.illegalTraders?.map(p => p.name).join(', ')}</p>}
                     <button className='text-red-500 text-left' onClick={() => {
                       const g = copyGame(game)
                       
@@ -387,6 +403,45 @@ export default function Home() {
                     }}
                   />
                 </div>
+                
+                {/* Question for players who might have accidentally traded their cards when they had at least 17 points */}
+                {game.players.filter(p => p.points >= 17).length > 0 && <>
+                  <div className="mt-2 -mb-2">
+                    <h2 className="text-sm font-medium">Spelare med minst 17p som har gjort ett byte:</h2>
+                  </div>
+                  {game.players.filter(p => p.points >= 17).map(p => (
+                    <div key={p.name} className="flex items-center"> 
+                      <Switch.Group as="div" className="flex items-center">
+                        <Switch
+                          checked={illegalTraders.includes(p)}
+                          onChange={(e: boolean) => {
+                            if (e) {
+                              setIllegalTraders(illegalTraders => [...illegalTraders, p])
+                            } else {
+                              setIllegalTraders(illegalTraders => illegalTraders.filter(p2 => p2 !== p))
+                            }
+                          }}
+                          className={classNames(
+                            illegalTraders.includes(p) ? 'bg-indigo-600' : 'bg-gray-200',
+                            'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2'
+                          )}
+                        >
+                          <span
+                            aria-hidden="true"
+                            className={classNames(
+                              illegalTraders.includes(p) ? 'translate-x-5' : 'translate-x-0',
+                              'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out'
+                            )}
+                          />
+                        </Switch>
+                        <Switch.Label as="span" className="ml-3">
+                          <p className="text-sm font-medium">{`${p.name} (${p.points}p)`}{' har gjort ett byte'}</p>
+                          <p className="text-sm text-gray-400">(Nollställer poängen för {p.name})</p>
+                        </Switch.Label>
+                      </Switch.Group>
+                    </div>
+                  ))}
+                </>}
 
                 {!!roundWinnerLastCard && !!roundWinnerBestHand && !!roundBestHand && 
                 
@@ -399,7 +454,8 @@ export default function Home() {
                       newGame.rounds.push({
                         roundWinnerLastCard,
                         roundWinnerBestHand,
-                        roundBestHand
+                        roundBestHand,
+                        illegalTraders
                       })
                       
                       newGame.players = newGame.players.map(p => {
@@ -412,12 +468,37 @@ export default function Home() {
                         return p
                       })
 
+                      // For each player that was not over the 17 point limit last time, but is now, make an announcement info
+                      newGame.players.filter(p => p.points >= 17).forEach(p => {
+                        if (game.players.find(p2 => p2.name === p.name)!.points < 17) {
+                          toast(`${p.name} har ${p.points}p → får ej byta kort`, { icon: '♦️', duration: 5000 })
+                        }
+                      })
+
+                      // Remove points for any illegal traders
+                      newGame.players = newGame.players.map(p => {
+                        if (illegalTraders.find(p2 => p2.name === p.name)) {
+                          p.points = 0
+                        }
+                        return p
+                      })
+
+                      // Make the next player the dealer
+                      const dealerIndex = newGame.players.findIndex(p => p.dealer)
+                      newGame.players[dealerIndex].dealer = false
+                      const newDealerIndex = (dealerIndex + 1) % newGame.players.length
+                      newGame.players[newDealerIndex].dealer = true
+
+                      // Announce next dealer
+                      toast(`${newGame.players[newDealerIndex].name} är nästa dealer`, { icon: '♥️', duration: 5000 })
+
                       saveGame(newGame)
                       return newGame
                     })
                     setRoundWinnerLastCard(null)
                     setRoundWinnerBestHand(null)
                     setRoundBestHand(null)
+                    setIllegalTraders([])
                   }}
                 >
                   <PlusIcon className="-ml-1 mr-3 h-5 w-5" aria-hidden="true" />
@@ -433,7 +514,7 @@ export default function Home() {
           </div>
 
           <div className='text-md text-gray-400 text-center mt-20'>
-            &copy; 2023 - <a className="underline" href="https://sigfrid.stjarnholm.com" target="_blank" rel="noopener noreferrer">Sigfrid Stjärnholm</a>
+            &copy; {new Date().getFullYear()} - <a className="underline" href="https://sigfrid.stjarnholm.com" target="_blank" rel="noopener noreferrer">Sigfrid Stjärnholm</a>
           </div>
 
           <div className='text-md text-gray-400 text-center mt-20'>
@@ -442,6 +523,7 @@ export default function Home() {
               <ul className='list-disc list-inside'>
                 <li>2023-01-31: Initial version</li>
                 <li>2023-02-01: Trepar → Triss, begränsa spelarnamnslängd</li>
+                <li>2023-02-02: Alternativ för illegala byten, visa vem som är dealer, notifikationer vid ny dealer eller nytt bytstopp</li>
               </ul>
             </div>) : (<div>
               <p className='underline cursor-pointer' onClick={() => {setShowChangeLog(true)}}>Visa ändringslogg</p>
