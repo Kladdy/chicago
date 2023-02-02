@@ -7,6 +7,7 @@ import { ArrowPathIcon, ExclamationCircleIcon, PlusIcon, TrashIcon } from '@hero
 import RadioGroupWithDisabledOptions, { RadioOption } from '@/components/RadioGroupWithDisabledOptions'
 import { Switch } from '@headlessui/react'
 import toast, { Toaster } from 'react-hot-toast'
+import { FireworksContainer } from '@/components/FireworksContainer'
 
 function classNames(...classes: string[]) {
   return classes.filter(Boolean).join(' ')
@@ -67,6 +68,7 @@ export default function Home() {
   const [clearRoundsPrompt, setClearRoundsPrompt] = useState<boolean>(false)
   const [showChangeLog, setShowChangeLog] = useState<boolean>(false);
   const [illegalTraders, setIllegalTraders] = useState<Player[]>([])
+  const [showFireworks, setShowFireworks] = useState<boolean>(false)
 
   const NAME_LENGTH_LIMIT = 10;
 
@@ -137,6 +139,14 @@ export default function Home() {
     setTimeout(() => {
       setClearRoundsPrompt(false)
     }, 2000)
+  }
+
+  function activateFireworks() {
+    setShowFireworks(true)
+
+    setTimeout(() => {
+      setShowFireworks(false)
+    }, 10000)
   }
 
   return (
@@ -471,7 +481,7 @@ export default function Home() {
                       // For each player that was not over the 17 point limit last time, but is now, make an announcement info
                       newGame.players.filter(p => p.points >= 17).forEach(p => {
                         if (game.players.find(p2 => p2.name === p.name)!.points < 17) {
-                          toast(`${p.name} har ${p.points}p → får ej byta kort`, { icon: '♦️', duration: 5000 })
+                          toast(`${p.name} har ${p.points}p → får ej byta kort`, { icon: '⚠️', duration: 5000 })
                         }
                       })
 
@@ -490,7 +500,16 @@ export default function Home() {
                       newGame.players[newDealerIndex].dealer = true
 
                       // Announce next dealer
-                      toast(`${newGame.players[newDealerIndex].name} är nästa dealer`, { icon: '♥️', duration: 5000 })
+                      toast(`${newGame.players[newDealerIndex].name} är nästa dealer`, { icon: '🎲', duration: 5000 })
+
+                      // If any player has 21 or more points, but did not have it the last time, print out and display fireworks
+                      const previousRoundWinners = game.players.filter(p => p.points >= 21).map(p => p.name)
+                      if (newGame.players.filter(p => p.points >= 21 && !previousRoundWinners.includes(p.name)).length > 0) {
+                        activateFireworks()
+                        newGame.players.filter(p => p.points >= 21 && !previousRoundWinners.includes(p.name)).forEach(p => {
+                          toast(`${p.name} har ${p.points}p!`, { icon: '🎉', duration: 5000 })
+                        })
+                      }
 
                       saveGame(newGame)
                       return newGame
@@ -531,6 +550,7 @@ export default function Home() {
           </div>
 
         </div>
+        {showFireworks && <FireworksContainer/>}
       </main>
     </>
   )
