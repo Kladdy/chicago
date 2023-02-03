@@ -8,6 +8,7 @@ import RadioGroupWithDisabledOptions, { RadioOption } from '@/components/RadioGr
 import { Switch } from '@headlessui/react'
 import toast, { Toaster } from 'react-hot-toast'
 import { FireworksContainer } from '@/components/FireworksContainer'
+import FadeInOutComponent, { FADE_IN_TIME, FADE_OUT_TIME, WAIT_TIME } from '@/components/FadeInOutFireworks'
 
 function classNames(...classes: string[]) {
   return classes.filter(Boolean).join(' ')
@@ -69,6 +70,7 @@ export default function Home() {
   const [showChangeLog, setShowChangeLog] = useState<boolean>(false);
   const [illegalTraders, setIllegalTraders] = useState<Player[]>([])
   const [showFireworks, setShowFireworks] = useState<boolean>(false)
+  const [renderFireworksComponent, setRenderFireworksComponent] = useState<boolean>(false)
 
   const NAME_LENGTH_LIMIT = 10;
 
@@ -142,11 +144,21 @@ export default function Home() {
   }
 
   function activateFireworks() {
-    setShowFireworks(true)
+
+    // setShowFireworks(true)
+    setRenderFireworksComponent(true)
+    setShowFireworks(true);
 
     setTimeout(() => {
-      setShowFireworks(false)
-    }, 10000)
+      setShowFireworks(false);
+
+      setTimeout(() => {
+        setRenderFireworksComponent(false)
+        setShowFireworks(false)
+      }, FADE_OUT_TIME + 10000)
+    }, WAIT_TIME);
+
+    
   }
 
   return (
@@ -532,6 +544,37 @@ export default function Home() {
             </>}
           </div>
 
+          <button onClick={activateFireworks} className="button">
+            FIREWORKS
+          </button>
+          {/* {renderFireworksComponent && 
+            <FadeInOutComponent isVisible={showFireworks} setIsVisible={setShowFireworks} />
+          } */}
+          
+          {/* {showFireworks && 
+            <div
+              style={{
+                opacity: showFireworks ? 1 : 0,
+                transition: 'opacity 2s ease-in-out'
+              }}
+            >
+              <FireworksContainer />
+            </div>
+          } */}
+          {/* {showFireworks && 
+            <div
+              className={`${
+                showFireworks ? 'animate-fade-in' : 'animate-fade-out'
+              } duration-2000 ${showFireworks ? 'opacity-1' : ''}`}
+            >
+              <FireworksContainer />
+            </div>
+          } */}
+          
+          {/* <div className={!beginFadeoutFireworks ? styles.fireworksShow : styles.fireworksHide}>
+            {showFireworks && <FireworksContainer />}
+          </div> */}
+
           <div className='text-md text-gray-400 text-center mt-20'>
             &copy; {new Date().getFullYear()} - <a className="underline" href="https://sigfrid.stjarnholm.com" target="_blank" rel="noopener noreferrer">Sigfrid Stjärnholm</a>
           </div>
@@ -549,8 +592,14 @@ export default function Home() {
             </div>)}
           </div>
 
+
+          <div style={{
+            opacity: showFireworks ? 1 : 0,
+            transition: 'opacity 2s ease-in-out'
+          }}>
+            <FireworksContainer />
+          </div>
         </div>
-        {showFireworks && <FireworksContainer/>}
       </main>
     </>
   )

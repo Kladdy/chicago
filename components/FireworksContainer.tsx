@@ -11,8 +11,8 @@ export class FireworksContainer extends React.PureComponent {
   }
 
   render() {
-    console.log("tjenare")
     const options = {
+      // fullScreen: { enable: false },
       preset: "fireworks",
     };
 

@@ -1,3 +1,12 @@
+.fireworksShow {
+  transition: opacity 2s;
+  opacity: 1;
+}
+.fireworksHide {
+  transition: opacity 2s;
+  opacity: 0;
+}
+
 .main {
   display: flex;
   flex-direction: column;

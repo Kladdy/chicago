@@ -106,3 +106,50 @@ a {
 html {
   color-scheme: dark;
 }
+
+
+
+/* CUSTOM */
+.fireworksFadeIn {
+  transition-property: opacity;
+  transition-timing-function: cubic-bezier(0, 0, 1, 1);
+  transition-duration: 2000ms;
+}
+
+.fireworksFadeOut {
+  transition-property: opacity;
+  transition-timing-function: cubic-bezier(1, 1, 0, 0);
+  transition-duration: 2000ms;
+}
+
+/* .animate-fade-in {
+  opacity: 0;
+  animation: fade-in 2s;
+}
+
+.animate-fade-out {
+  opacity: 1;
+  animation: fade-out 2s;
+}
+
+.opacity-1 {
+  opacity: 1 !important;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+} */
