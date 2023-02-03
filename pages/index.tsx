@@ -290,7 +290,10 @@ export default function Home() {
             <form 
               onSubmit={(e) => {
                 e.preventDefault()
-                
+
+                if (!!game.players.find(p => p.name === newPlayerName)) return
+                if (newPlayerName === "") return
+
                 setGame(g => {
                   // Create a new player. If it is the first player, make it dealer
                   const newGame = copyGame(g)
