@@ -55,7 +55,7 @@ interface Player {
 
 export const FADE_IN_TIME = 2000;
 export const FADE_OUT_TIME = 2000;
-export const WAIT_TIME = 6000;
+export const WAIT_TIME = 8000;
 
 export default function Home() {
 
@@ -287,65 +287,71 @@ export default function Home() {
               ))}
             </div>
             
-            <label htmlFor="newName" className="mt-4 block text-sm font-medium ">
-              Lägg till ny spelare (i sittningsordning)
-            </label>
-            <div className='flex flex-row gap-2 items-center'>
-              
-              <div className='w-64'>
+            <form 
+              onSubmit={(e) => {
+                e.preventDefault()
                 
-                <div className="relative mt-1 rounded-md shadow-sm">
-                  <input
-                    type="text"
-                    name="newName"
-                    id="newName"
-                    className={classNames("block w-full rounded-md  pr-10 focus:outline-none sm:text-sm", 
-                      game.players.find(p => p.name === newPlayerName) ? "border-red-300 text-red-900 placeholder-red-300 focus:border-red-500 focus:ring-red-500" : "border-gray-300 text-gray-800"
-                    )}
-                    placeholder="Namn"
-                    value={newPlayerName}
-                    onChange={(e) => {
-                      setNewPlayerName(e.target.value || "")
-                    }}
-                  />
-                  {(!!game.players.find(p => p.name === newPlayerName) || newPlayerName.length > NAME_LENGTH_LIMIT) &&
-                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
-                      <ExclamationCircleIcon className="h-5 w-5 text-red-500" aria-hidden="true" />
-                    </div>
-                  }
+                setGame(g => {
+                  // Create a new player. If it is the first player, make it dealer
+                  const newGame = copyGame(g)
+                  newGame.players.push({name: newPlayerName, points: 0, dealer: game.players.length === 0})
+                  saveGame(newGame)
+                  return newGame
+                })
+                setNewPlayerName("")
+              }}
+            >
+              <label htmlFor="newName" className="mt-4 block text-sm font-medium">
+                Lägg till ny spelare (i sittningsordning)
+              </label>
+              <div className='flex flex-row gap-2 items-center'>
+                
+                <div className='w-64'>
                   
+                  <div className="relative mt-1 rounded-md shadow-sm">
+                    <input
+                      type="text"
+                      name="newName"
+                      id="newName"
+                      className={classNames("block w-full rounded-md  pr-10 focus:outline-none sm:text-sm", 
+                        game.players.find(p => p.name === newPlayerName) ? "border-red-300 text-red-900 placeholder-red-300 focus:border-red-500 focus:ring-red-500" : "border-gray-300 text-gray-800"
+                      )}
+                      placeholder="Namn"
+                      value={newPlayerName}
+                      onChange={(e) => {
+                        setNewPlayerName(e.target.value || "")
+                      }}
+                    />
+                    {(!!game.players.find(p => p.name === newPlayerName) || newPlayerName.length > NAME_LENGTH_LIMIT) &&
+                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                        <ExclamationCircleIcon className="h-5 w-5 text-red-500" aria-hidden="true" />
+                      </div>
+                    }
+                    
+                  </div>
+                  {!!game.players.find(p => p.name === newPlayerName) &&
+                    <p className="mt-2 text-sm text-red-600" id="email-error">
+                      En spelare har redan det namnet
+                    </p>
+                  }
+                  {newPlayerName.length > NAME_LENGTH_LIMIT &&
+                    <p className="mt-2 text-sm text-red-600" id="email-error">
+                      Namnet är för långt (max {NAME_LENGTH_LIMIT} bokstäver)
+                    </p>
+                  }
                 </div>
-                {!!game.players.find(p => p.name === newPlayerName) &&
-                  <p className="mt-2 text-sm text-red-600" id="email-error">
-                    En spelare har redan det namnet
-                  </p>
-                }
-                {newPlayerName.length > NAME_LENGTH_LIMIT &&
-                  <p className="mt-2 text-sm text-red-600" id="email-error">
-                    Namnet är för långt (max {NAME_LENGTH_LIMIT} bokstäver)
-                  </p>
+
+                {!!newPlayerName && !game.players.find(p => p.name === newPlayerName) && !(newPlayerName.length > NAME_LENGTH_LIMIT) &&
+                  <button
+                    type="submit"
+                    className="h-10 w-10 inline-flex items-center rounded-full border border-transparent bg-indigo-600 p-2 text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                  >
+                    <PlusIcon className="h-5 w-5" aria-hidden="true" />
+                  </button>
                 }
               </div>
-
-              {!!newPlayerName && !game.players.find(p => p.name === newPlayerName) && !(newPlayerName.length > NAME_LENGTH_LIMIT) &&
-                <button
-                  onClick={() => {
-                    setGame(g => {
-                      // Create a new player. If it is the first player, make it dealer
-                      const newGame = copyGame(g)
-                      newGame.players.push({name: newPlayerName, points: 0, dealer: game.players.length === 0})
-                      saveGame(newGame)
-                      return newGame
-                    })
-                    setNewPlayerName("")
-                  }}
-                  type="button"
-                  className="h-10 w-10 inline-flex items-center rounded-full border border-transparent bg-indigo-600 p-2 text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                >
-                  <PlusIcon className="h-5 w-5" aria-hidden="true" />
-                </button>
-              }
-            </div>
+              <input type="submit" hidden />
+            </form>
           </div>
 
           <hr className='border-gray-600 my-6'></hr>
@@ -521,7 +527,7 @@ export default function Home() {
                       if (newGame.players.filter(p => p.points >= 21 && !previousRoundWinners.includes(p.name)).length > 0) {
                         activateFireworks()
                         newGame.players.filter(p => p.points >= 21 && !previousRoundWinners.includes(p.name)).forEach(p => {
-                          toast(`${p.name} har ${p.points}p!`, { icon: '🎉', duration: 5000 })
+                          toast(`${p.name} har ${p.points}p!`, { icon: '🎉', duration: 10000 })
                         })
                       }
 
@@ -556,7 +562,7 @@ export default function Home() {
               <ul className='list-disc list-inside'>
                 <li>2023-01-31: Initial version</li>
                 <li>2023-02-01: Trepar → Triss, begränsa spelarnamnslängd</li>
-                <li>2023-02-02: Alternativ för illegala byten, visa vem som är dealer, notifikationer vid ny dealer eller nytt bytstopp</li>
+                <li>2023-02-02: Alternativ för illegala byten, visa vem som är dealer, notifikationer vid ny dealer eller nytt bytstopp, fyrverkerier</li>
               </ul>
             </div>) : (<div>
               <p className='underline cursor-pointer' onClick={() => {setShowChangeLog(true)}}>Visa ändringslogg</p>
