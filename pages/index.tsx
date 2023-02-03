@@ -490,6 +490,14 @@ export default function Home() {
                         roundBestHand,
                         illegalTraders
                       })
+
+                      // Remove points for any illegal traders
+                      newGame.players = newGame.players.map(p => {
+                        if (illegalTraders.find(p2 => p2.name === p.name)) {
+                          p.points = 0
+                        }
+                        return p
+                      })
                       
                       newGame.players = newGame.players.map(p => {
                         if (p.name === roundWinnerLastCard.name) {
@@ -506,14 +514,6 @@ export default function Home() {
                         if (game.players.find(p2 => p2.name === p.name)!.points < 17) {
                           toast(`${p.name} har ${p.points}p → får ej byta kort`, { icon: '⚠️', duration: 5000 })
                         }
-                      })
-
-                      // Remove points for any illegal traders
-                      newGame.players = newGame.players.map(p => {
-                        if (illegalTraders.find(p2 => p2.name === p.name)) {
-                          p.points = 0
-                        }
-                        return p
                       })
 
                       // Make the next player the dealer
