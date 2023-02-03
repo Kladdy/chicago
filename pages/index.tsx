@@ -8,7 +8,6 @@ import RadioGroupWithDisabledOptions, { RadioOption } from '@/components/RadioGr
 import { Switch } from '@headlessui/react'
 import toast, { Toaster } from 'react-hot-toast'
 import { FireworksContainer } from '@/components/FireworksContainer'
-import FadeInOutComponent, { FADE_IN_TIME, FADE_OUT_TIME, WAIT_TIME } from '@/components/FadeInOutFireworks'
 
 function classNames(...classes: string[]) {
   return classes.filter(Boolean).join(' ')
@@ -53,6 +52,10 @@ interface Player {
   points: number,
   dealer: boolean,
 }
+
+export const FADE_IN_TIME = 2000;
+export const FADE_OUT_TIME = 2000;
+export const WAIT_TIME = 6000;
 
 export default function Home() {
 
@@ -154,8 +157,7 @@ export default function Home() {
 
       setTimeout(() => {
         setRenderFireworksComponent(false)
-        setShowFireworks(false)
-      }, FADE_OUT_TIME + 10000)
+      }, FADE_OUT_TIME + 1000)
     }, WAIT_TIME);
 
     
@@ -543,37 +545,6 @@ export default function Home() {
 
             </>}
           </div>
-
-          <button onClick={activateFireworks} className="button">
-            FIREWORKS
-          </button>
-          {/* {renderFireworksComponent && 
-            <FadeInOutComponent isVisible={showFireworks} setIsVisible={setShowFireworks} />
-          } */}
-          
-          {/* {showFireworks && 
-            <div
-              style={{
-                opacity: showFireworks ? 1 : 0,
-                transition: 'opacity 2s ease-in-out'
-              }}
-            >
-              <FireworksContainer />
-            </div>
-          } */}
-          {/* {showFireworks && 
-            <div
-              className={`${
-                showFireworks ? 'animate-fade-in' : 'animate-fade-out'
-              } duration-2000 ${showFireworks ? 'opacity-1' : ''}`}
-            >
-              <FireworksContainer />
-            </div>
-          } */}
-          
-          {/* <div className={!beginFadeoutFireworks ? styles.fireworksShow : styles.fireworksHide}>
-            {showFireworks && <FireworksContainer />}
-          </div> */}
 
           <div className='text-md text-gray-400 text-center mt-20'>
             &copy; {new Date().getFullYear()} - <a className="underline" href="https://sigfrid.stjarnholm.com" target="_blank" rel="noopener noreferrer">Sigfrid Stjärnholm</a>
