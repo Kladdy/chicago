@@ -509,10 +509,16 @@ export default function Home() {
                         return p
                       })
 
+                      let anyNewWinner = false
+                      const previousRoundWinners = game.players.filter(p => p.points >= 21).map(p => p.name)
+                      if (newGame.players.filter(p => p.points >= 21 && !previousRoundWinners.includes(p.name)).length > 0) {
+                        anyNewWinner = true
+                      }
+
                       // For each player that was not over the 17 point limit last time, but is now, make an announcement info
                       newGame.players.filter(p => p.points >= 17).forEach(p => {
                         if (game.players.find(p2 => p2.name === p.name)!.points < 17) {
-                          toast(`${p.name} har ${p.points}p → får ej byta kort`, { icon: '⚠️', duration: 5000 })
+                          if (!anyNewWinner) toast(`${p.name} har ${p.points}p → får ej byta kort`, { icon: '⚠️', duration: 5000 })
                         }
                       })
 
@@ -523,11 +529,10 @@ export default function Home() {
                       newGame.players[newDealerIndex].dealer = true
 
                       // Announce next dealer
-                      toast(`${newGame.players[newDealerIndex].name} är nästa dealer`, { icon: '🎲', duration: 5000 })
+                      if (!anyNewWinner) toast(`${newGame.players[newDealerIndex].name} är nästa dealer`, { icon: '🎲', duration: 5000 })
 
                       // If any player has 21 or more points, but did not have it the last time, print out and display fireworks
-                      const previousRoundWinners = game.players.filter(p => p.points >= 21).map(p => p.name)
-                      if (newGame.players.filter(p => p.points >= 21 && !previousRoundWinners.includes(p.name)).length > 0) {
+                      if (anyNewWinner) {
                         activateFireworks()
                         newGame.players.filter(p => p.points >= 21 && !previousRoundWinners.includes(p.name)).forEach(p => {
                           toast(`${p.name} har ${p.points}p!`, { icon: '🎉', duration: 10000 })
