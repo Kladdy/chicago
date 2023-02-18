@@ -8,50 +8,13 @@ import RadioGroupWithDisabledOptions, { RadioOption } from '@/components/RadioGr
 import { Switch } from '@headlessui/react'
 import toast, { Toaster } from 'react-hot-toast'
 import { FireworksContainer } from '@/components/FireworksContainer'
+import { Game, Player, Hand, Hands } from '@/lib/types'
 
 function classNames(...classes: string[]) {
   return classes.filter(Boolean).join(' ')
 }
 
 const inter = Inter({ subsets: ['latin'] })
-
-interface Game {
-  players: Player[],
-  rounds: Round[],
-  created?: string,
-}
-
-interface Round {
-  roundWinnerLastCard: Player,
-  roundWinnerBestHand: Player,
-  roundBestHand: Hand,
-  illegalTraders: Player[],
-}
-
-// Create a map with hands
-const Hands : Hand[] = [
-  { name: "Högst kort", value: 0 },
-  { name: "Par", value: 1 },
-  { name: "Tvåpar", value: 2 },
-  { name: "Triss", value: 3 },
-  { name: "Stege", value: 4 },
-  { name: "Färg", value: 5 },
-  { name: "Kåk", value: 6 },
-  { name: "Fyrtal", value: 7 },
-  { name: "Färgstege", value: 8 },
-  { name: "Royal Flush", value: 9 },
-]
-
-interface Hand {
-  name: string,
-  value: number,
-}
-
-interface Player {
-  name: string,
-  points: number,
-  dealer: boolean,
-}
 
 export const FADE_IN_TIME = 2000;
 export const FADE_OUT_TIME = 2000;
@@ -124,6 +87,18 @@ export default function Home() {
       console.log("Game has no rounds, not archiving")
       return
     }
+
+    // Send game to archive api
+    fetch('/api/archive', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(g)
+      })
+      .then(res => {
+        console.log("Archived game")
+      })
 
     const archivedGames = loadArchivedGames()
     archivedGames.push(g)
@@ -529,7 +504,7 @@ export default function Home() {
                       newGame.players[newDealerIndex].dealer = true
 
                       // Announce next dealer
-                      if (!anyNewWinner) toast(`${newGame.players[newDealerIndex].name} är nästa dealer`, { icon: '🎲', duration: 5000 })
+                      if (!anyNewWinner) toast(`${newGame.players[newDealerIndex].name} är dealer`, { icon: '🎲', duration: 5000 })
 
                       // If any player has 21 or more points, but did not have it the last time, print out and display fireworks
                       if (anyNewWinner) {
@@ -567,7 +542,7 @@ export default function Home() {
           <div className='text-md text-gray-400 text-center mt-20'>
             {showChangeLog ? (<div>
               <p className='underline cursor-pointer' onClick={() => {setShowChangeLog(false)}}>Dölj ändringslogg</p>
-              <ul className='list-disc list-inside'>
+              <ul className='list-disc list-inside max-w-xs'>
                 <li>2023-01-31: Initial version</li>
                 <li>2023-02-01: Trepar → Triss, begränsa spelarnamnslängd</li>
                 <li>2023-02-02: Alternativ för illegala byten, visa vem som är dealer, notifikationer vid ny dealer eller nytt bytstopp, fyrverkerier</li>
