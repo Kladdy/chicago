@@ -6,6 +6,13 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse,
 ) {
+  // If developing locally, dont perform this archiving
+  if (process.env.NODE_ENV === 'development') {
+    console.log('Development environment, skipping archiving')
+    res.status(200).end()
+    return
+  }
+
   await fetch('https://io.stjarnholm.com/api/statistics/save_object?key=chicago_games',
     {
       method: 'POST',
